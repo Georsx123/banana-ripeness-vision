@@ -129,3 +129,26 @@ class SmoothTransitions extends PageTransitionsBuilder {
     );
   }
 }
+
+/// Paket user (tipe akun) dan batas scan per hari. Admin tidak dibatasi.
+class PlanInfo {
+  final String key, nama, harga;
+  final int limit;
+  final Color warna;
+  final IconData ikon;
+  const PlanInfo(this.key, this.nama, this.limit, this.harga, this.warna, this.ikon);
+}
+
+const List<PlanInfo> planList = [
+  PlanInfo('reguler', 'Reguler', 10, 'Gratis', Color(0xFF78909C), Icons.person_rounded),
+  PlanInfo('vip', 'VIP', 50, 'Berbayar', Color(0xFFF9A825), Icons.workspace_premium_rounded),
+  PlanInfo('premium', 'Premium', 100, 'Berbayar', Color(0xFF8E24AA), Icons.diamond_rounded),
+];
+
+PlanInfo planInfo(String key) {
+  final k = key.trim().toLowerCase();
+  for (final p in planList) {
+    if (p.key == k) return p;
+  }
+  return planList.first;
+}

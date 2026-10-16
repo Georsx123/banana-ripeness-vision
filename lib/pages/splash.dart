@@ -11,10 +11,10 @@ class SplashTiming {
   static const startup = Duration(milliseconds: 4000);
 
   /// Setelah klik Masuk (sebelum dashboard). Ditambah +0,6 detik animasi masuk.
-  static const afterLogin = Duration(milliseconds: 3000);
+  static const afterLogin = Duration(milliseconds: 2500);
 
   /// Setelah klik Keluar (sebelum halaman awal). Ditambah +0,6 detik animasi masuk.
-  static const afterLogout = Duration(milliseconds: 3000);
+  static const afterLogout = Duration(milliseconds: 2500);
 }
 
 /// Layar pembuka bermerek: dipakai saat aplikasi dibuka dan setelah login.

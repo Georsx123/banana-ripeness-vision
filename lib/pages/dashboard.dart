@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../charts.dart';
+import '../info_data.dart';
 import '../services.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -13,7 +14,6 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   List<Map<String, dynamic>> _scans = [];
-  List<Map<String, dynamic>> _infos = [];
   bool _loading = true;
 
   @override
@@ -23,21 +23,14 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _load() async {
+    Api.refreshQuota();
     try {
-      final r = await Future.wait([Api.myScans(), Api.infoAktif()]);
-      _scans = r[0];
-      _infos = r[1];
+      _scans = await Api.myScans();
     } catch (e) {
       if (mounted) toast(context, Api.friendly(e), error: true);
     }
     if (mounted) setState(() => _loading = false);
   }
-
-  static const _fallback = [
-    {'kategori': 'fakta', 'judul': 'Pisang itu buah berry', 'isi': 'Secara botani, pisang termasuk buah berry.'},
-    {'kategori': 'info', 'judul': 'Pati berubah jadi gula', 'isi': 'Makin matang, pisang makin manis dan mudah dicerna.'},
-    {'kategori': 'tips', 'judul': 'Perlambat pematangan', 'isi': 'Bungkus tangkai pisang dengan plastik wrap.'},
-  ];
 
   IconData _icon(String k) => k == 'fakta' ? Icons.lightbulb_rounded : (k == 'tips' ? Icons.tips_and_updates_rounded : Icons.info_rounded);
   Color _color(String k) => k == 'fakta' ? const Color(0xFF8E24AA) : (k == 'tips' ? kGreen : const Color(0xFF1E88E5));
@@ -57,7 +50,7 @@ class _DashboardPageState extends State<DashboardPage> {
       final e = counts.entries.reduce((a, b) => a.value >= b.value ? a : b);
       topKelas = infoKelas(e.key).nama;
     }
-    final infos = _infos.isEmpty ? _fallback : _infos;
+    final infos = infoPisangList;
     final wide = MediaQuery.of(context).size.width > 560;
 
     return PageWrap(
@@ -98,6 +91,21 @@ class _DashboardPageState extends State<DashboardPage> {
             StatCard(icon: Icons.qr_code_scanner_rounded, label: 'Total scan saya', value: '${distinctScans(_scans)}', color: kDeepAmber),
             StatCard(icon: Icons.today_rounded, label: 'Scan hari ini', value: '$today', color: kGreen),
             StatCard(icon: Icons.emoji_events_rounded, label: 'Kelas terbanyak', value: topKelas, color: const Color(0xFF8E24AA)),
+            ValueListenableBuilder<Quota?>(
+              valueListenable: Api.quota,
+              builder: (_, q, __) {
+                final admin = AppState.me?.isAdmin ?? false;
+                final unlimited = admin || (q?.unlimited ?? false);
+                final plan = admin ? 'Admin' : planInfo(q?.plan ?? AppState.me?.plan ?? 'reguler').nama;
+                final habis = q != null && !unlimited && q.remaining <= 0;
+                return StatCard(
+                  icon: Icons.bolt_rounded,
+                  label: 'Sisa scan hari ini \u2022 $plan',
+                  value: unlimited ? 'Tanpa batas' : (q == null ? '...' : '${q.remaining} dari ${q.limit}'),
+                  color: habis ? Colors.red.shade700 : const Color(0xFF1E88E5),
+                );
+              },
+            ),
           ]),
         const SectionTitle('Enam tingkat kematangan', Icons.category_rounded),
         ResponsiveWrap(minWidth: 300, children: [

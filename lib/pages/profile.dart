@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services.dart';
 import '../theme.dart';
@@ -14,14 +15,24 @@ class _ProfilePageState extends State<ProfilePage> {
   final _k2 = GlobalKey<FormState>();
   late final TextEditingController _nama;
   late final TextEditingController _telp;
+  final _code = TextEditingController();
   final _p1 = TextEditingController();
   final _p2 = TextEditingController();
   String? _gender;
-  bool _saving = false, _savingPass = false;
+  bool _saving = false;
+  bool _otpSent = false;
+  bool _otpLoading = false;
+  bool _savingPass = false;
+  int _cool = 0;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    Api.refreshQuota();
+    Api.loadProfile().then((_) {
+      if (mounted) setState(() {});
+    }, onError: (_) {});
     final me = AppState.me!;
     _nama = TextEditingController(text: me.nama);
     _telp = TextEditingController(text: me.noTelp);
@@ -30,11 +41,32 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   void dispose() {
+    _timer?.cancel();
     _nama.dispose();
     _telp.dispose();
+    _code.dispose();
     _p1.dispose();
     _p2.dispose();
     super.dispose();
+  }
+
+  String _mask(String e) {
+    final i = e.indexOf('@');
+    if (i <= 2) return e;
+    return '${e.substring(0, 2)}***${e.substring(i)}';
+  }
+
+  void _startCooldown() {
+    _timer?.cancel();
+    setState(() => _cool = 60);
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() => _cool--);
+      if (_cool <= 0) t.cancel();
+    });
   }
 
   Future<void> _save() async {
@@ -50,19 +82,93 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _sendOtp() async {
+    setState(() => _otpLoading = true);
+    try {
+      await Api.sendProfileOtp();
+      if (!mounted) return;
+      setState(() => _otpSent = true);
+      _startCooldown();
+      toast(context, 'Kode OTP dikirim ke emailmu. Cek inbox atau folder spam.');
+    } catch (e) {
+      if (mounted) toast(context, Api.friendly(e), error: true);
+    } finally {
+      if (mounted) setState(() => _otpLoading = false);
+    }
+  }
+
   Future<void> _savePass() async {
     if (!_k2.currentState!.validate()) return;
     setState(() => _savingPass = true);
     try {
-      await Api.changeMyPassword(_p1.text);
+      await Api.changePasswordWithOtp(_code.text, _p1.text);
+      _code.clear();
       _p1.clear();
       _p2.clear();
-      if (mounted) toast(context, 'Password berhasil diganti');
+      if (!mounted) return;
+      setState(() => _otpSent = false);
+      toast(context, 'Password berhasil diganti');
     } catch (e) {
       if (mounted) toast(context, Api.friendly(e), error: true);
     } finally {
       if (mounted) setState(() => _savingPass = false);
     }
+  }
+
+  Widget _passwordCard(Profile me) {
+    final title = const Text('Ganti password', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: kBrown));
+    if (!me.hasRealEmail) {
+      return AppCard(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          title,
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: alpha(kAmber, .18), borderRadius: BorderRadius.circular(14)),
+            child: Text(
+              'Akun ini belum punya email asli, jadi kode OTP tidak bisa dikirim. Untuk memakai fitur ini, daftar akun baru dengan email asli.',
+              style: TextStyle(color: Colors.brown.shade700, height: 1.4),
+            ),
+          ),
+        ]),
+      );
+    }
+    if (!_otpSent) {
+      return AppCard(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          title,
+          const SizedBox(height: 14),
+          Text('Demi keamanan, kode OTP akan dikirim ke ${_mask(me.email)} sebelum password diganti.',
+              style: TextStyle(color: Colors.brown.shade600, height: 1.4)),
+          const SizedBox(height: 18),
+          SizedBox(width: double.infinity, child: AppButton(label: 'Kirim Kode OTP', icon: Icons.send_rounded, loading: _otpLoading, onPressed: _sendOtp)),
+        ]),
+      );
+    }
+    return AppCard(
+      child: Form(
+        key: _k2,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          title,
+          const SizedBox(height: 14),
+          Text('Kode OTP dikirim ke ${_mask(me.email)}.', style: TextStyle(color: Colors.brown.shade600)),
+          const SizedBox(height: 12),
+          OtpField(controller: _code),
+          const SizedBox(height: 6),
+          PasswordPair(p1: _p1, p2: _p2),
+          const SizedBox(height: 14),
+          SizedBox(width: double.infinity, child: AppButton(label: 'Ganti Password', icon: Icons.lock_reset_rounded, loading: _savingPass, onPressed: _savePass)),
+          const SizedBox(height: 6),
+          Wrap(alignment: WrapAlignment.spaceBetween, children: [
+            TextButton(
+              onPressed: (_cool > 0 || _otpLoading) ? null : _sendOtp,
+              child: Text(_cool > 0 ? 'Kirim ulang kode (${_cool}s)' : 'Kirim ulang kode'),
+            ),
+            TextButton(onPressed: () => setState(() => _otpSent = false), child: const Text('Batal')),
+          ]),
+        ]),
+      ),
+    );
   }
 
   @override
@@ -87,12 +193,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Text('@${me.username}', style: TextStyle(color: Colors.brown.shade400)),
                 const SizedBox(height: 6),
                 Wrap(spacing: 8, children: [
-                  Chip(
-                    visualDensity: VisualDensity.compact,
-                    backgroundColor: alpha(me.isAdmin ? kGreen : kAmber, .18),
-                    side: BorderSide.none,
-                    label: Text(me.isAdmin ? 'Admin' : 'Pengguna'),
-                  ),
+                  PlanBadge(plan: me.plan, admin: me.isAdmin),
                   if (me.createdAt != null)
                     Chip(
                       visualDensity: VisualDensity.compact,
@@ -105,6 +206,8 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ]),
         ),
+        const SizedBox(height: 16),
+        const QuotaBar(),
         const SizedBox(height: 16),
         ResponsiveWrap(minWidth: 440, children: [
           AppCard(
@@ -123,6 +226,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   initialValue: me.username,
                   enabled: false,
                   decoration: const InputDecoration(labelText: 'Username (tidak bisa diubah)', prefixIcon: Icon(Icons.person_outline)),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  initialValue: me.hasRealEmail ? me.email : 'Belum ada email asli',
+                  enabled: false,
+                  decoration: const InputDecoration(labelText: 'Email (tidak bisa diubah)', prefixIcon: Icon(Icons.email_outlined)),
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
@@ -149,29 +258,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ]),
             ),
           ),
-          AppCard(
-            child: Form(
-              key: _k2,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Ganti password', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: kBrown)),
-                const SizedBox(height: 16),
-                PassField(
-                  controller: _p1,
-                  label: 'Password baru',
-                  validator: (v) => (v ?? '').length < 6 ? 'Minimal 6 karakter' : null,
-                ),
-                const SizedBox(height: 14),
-                PassField(
-                  controller: _p2,
-                  label: 'Konfirmasi password baru',
-                  action: TextInputAction.done,
-                  validator: (v) => v != _p1.text ? 'Konfirmasi tidak sama' : null,
-                ),
-                const SizedBox(height: 20),
-                SizedBox(width: double.infinity, child: AppButton(label: 'Ganti Password', icon: Icons.lock_reset_rounded, loading: _savingPass, onPressed: _savePass)),
-              ]),
-            ),
-          ),
+          _passwordCard(me),
         ]),
       ],
     );

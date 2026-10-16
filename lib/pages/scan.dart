@@ -158,6 +158,9 @@ class ScanPage extends StatefulWidget {
 class _ScanPageState extends State<ScanPage> {
   int _mode = 0; // 0 = gambar, 1 = realtime
 
+  MaintState? _maint = Api.lastMaint; // status mode pemeliharaan (dari cache jika ada)
+  bool _limitHit = false; // server menolak karena batas scan harian habis
+
   // mode gambar
   final _picker = ImagePicker();
   Uint8List? _img;
@@ -179,7 +182,79 @@ class _ScanPageState extends State<ScanPage> {
   bool _paused = false;
 
   @override
+  void initState() {
+    super.initState();
+    Api.quota.addListener(_onQuota);
+    Api.refreshQuota();
+    _checkMaint();
+  }
+
+  void _onQuota() {
+    if (mounted) setState(() {});
+  }
+
+  /// Batas scan harian sudah habis (dari angka sisa scan atau penolakan server).
+  bool get _exhausted {
+    final q = Api.quota.value;
+    return _limitHit || (q != null && q.exhausted);
+  }
+
+  /// Matikan kamera dan beri tahu pengguna bahwa batas scan harian habis.
+  void _enterLimit(String? msg) {
+    _stopLive();
+    if (!mounted) return;
+    setState(() => _limitHit = true);
+    toast(context, msg ?? 'Batas scan hari ini sudah habis. Kamera dimatikan.', error: true);
+  }
+
+  Future<void> _checkMaint() async {
+    try {
+      final m = await Api.maintenance();
+      if (!mounted) return;
+      setState(() => _maint = m);
+      if (m.on) _stopLive();
+    } catch (_) {
+      // jika gagal membaca pengaturan, anggap scan aktif
+      if (mounted && _maint == null) setState(() => _maint = const MaintState(false, MaintState.defaultMessage));
+    }
+  }
+
+  void _enterMaint(String message) {
+    _stopLive();
+    if (mounted) setState(() => _maint = MaintState(true, message));
+  }
+
+  Widget _maintCard() {
+    return AppCard(
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 22),
+      child: Column(children: [
+        Container(
+          width: 76,
+          height: 76,
+          decoration: BoxDecoration(color: alpha(kAmber, .2), shape: BoxShape.circle),
+          child: const Icon(Icons.construction_rounded, size: 40, color: kDeepAmber),
+        ),
+        const SizedBox(height: 16),
+        const Text('Scan sedang dijeda', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: kBrown)),
+        const SizedBox(height: 8),
+        Text(_maint?.message ?? MaintState.defaultMessage,
+            textAlign: TextAlign.center, style: TextStyle(color: Colors.brown.shade500, height: 1.4)),
+        const SizedBox(height: 20),
+        OutlinedButton.icon(
+          onPressed: () async {
+            await _checkMaint();
+            if (mounted && _maint?.on != true) toast(context, 'Scan sudah aktif kembali.');
+          },
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Cek lagi'),
+        ),
+      ]),
+    );
+  }
+
+  @override
   void dispose() {
+    Api.quota.removeListener(_onQuota);
     _timer?.cancel();
     _cam?.dispose();
     super.dispose();
@@ -207,6 +282,10 @@ class _ScanPageState extends State<ScanPage> {
   Future<void> _scanImage() async {
     final b = _img;
     if (b == null) return;
+    if (_exhausted) {
+      toast(context, 'Batas scan hari ini sudah habis. Coba lagi besok.', error: true);
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -217,6 +296,10 @@ class _ScanPageState extends State<ScanPage> {
       final r = await Roboflow.detect(b);
       if (!mounted) return;
       setState(() => _imgResult = r);
+    } on LimitException catch (e) {
+      _enterLimit(e.message);
+    } on MaintenanceException catch (e) {
+      _enterMaint(e.message);
     } catch (e) {
       if (mounted) setState(() => _error = Api.friendly(e));
     } finally {
@@ -309,7 +392,7 @@ class _ScanPageState extends State<ScanPage> {
                   label: _imgResult == null ? 'Scan Gambar' : 'Scan Ulang',
                   icon: Icons.document_scanner_rounded,
                   loading: _loading,
-                  onPressed: _scanImage,
+                  onPressed: _exhausted ? null : _scanImage,
                 ),
                 if (_imgResult != null)
                   AppButton(
@@ -344,6 +427,10 @@ class _ScanPageState extends State<ScanPage> {
 
   // ---------- mode realtime ----------
   Future<void> _startLive() async {
+    if (_exhausted) {
+      toast(context, 'Batas scan hari ini sudah habis. Coba lagi besok.', error: true);
+      return;
+    }
     setState(() {
       _starting = true;
       _liveError = null;
@@ -375,6 +462,10 @@ class _ScanPageState extends State<ScanPage> {
   Future<void> _tick() async {
     final c = _cam;
     if (_paused || _camBusy || c == null || !c.value.isInitialized) return;
+    if (_exhausted) {
+      _enterLimit(null);
+      return;
+    }
     _camBusy = true;
     try {
       final x = await c.takePicture();
@@ -388,7 +479,12 @@ class _ScanPageState extends State<ScanPage> {
           }
           _liveError = null;
         });
+        if (_exhausted) _enterLimit(null);
       }
+    } on LimitException catch (e) {
+      _enterLimit(e.message);
+    } on MaintenanceException catch (e) {
+      _enterMaint(e.message);
     } catch (e) {
       if (mounted) setState(() => _liveError = Api.friendly(e));
     } finally {
@@ -434,7 +530,7 @@ class _ScanPageState extends State<ScanPage> {
             const SizedBox(height: 4),
             Text('Browser akan meminta izin kamera. Pilih "Izinkan".', textAlign: TextAlign.center, style: TextStyle(color: Colors.brown.shade400)),
             const SizedBox(height: 18),
-            SizedBox(width: 260, child: AppButton(label: 'Aktifkan Kamera', icon: Icons.play_arrow_rounded, loading: _starting, onPressed: _startLive)),
+            SizedBox(width: 260, child: AppButton(label: 'Aktifkan Kamera', icon: Icons.play_arrow_rounded, loading: _starting, onPressed: _exhausted ? null : _startLive)),
           ]),
         )
       else ...[
@@ -487,6 +583,15 @@ class _ScanPageState extends State<ScanPage> {
         const SizedBox(height: 14),
         AppCard(color: Colors.red.shade50, child: Text(_liveError!, style: TextStyle(color: Colors.red.shade800))),
       ],
+      if (c == null && _live?.top != null) ...[
+        const SizedBox(height: 14),
+        AppButton(
+          label: _liveSaved ? 'Tersimpan ke Riwayat' : 'Simpan hasil terakhir ke Riwayat',
+          icon: _liveSaved ? Icons.check_circle_rounded : Icons.save_rounded,
+          loading: _saving,
+          onPressed: _liveSaved ? null : _saveLive,
+        ),
+      ],
       if (_live != null) ...[
         const SizedBox(height: 16),
         ResultPanel(result: _live!),
@@ -496,10 +601,29 @@ class _ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_maint == null) {
+      // Status belum diketahui: jangan tampilkan menu scan dulu supaya tidak berkedip.
+      return PageWrap(
+        title: 'Scan Pisang',
+        subtitle: 'Memeriksa status layanan...',
+        children: const [
+          Padding(padding: EdgeInsets.symmetric(vertical: 60), child: Center(child: CircularProgressIndicator())),
+        ],
+      );
+    }
+    if (_maint?.on == true) {
+      return PageWrap(
+        title: 'Scan Pisang',
+        subtitle: 'Deteksi tingkat kematangan pisang.',
+        children: [_maintCard()],
+      );
+    }
     return PageWrap(
       title: 'Scan Pisang',
       subtitle: 'Pilih mode deteksi: unggah gambar atau kamera realtime.',
       children: [
+        const QuotaBar(),
+        const SizedBox(height: 14),
         SegmentedButton<int>(
           segments: const [
             ButtonSegment(value: 0, icon: Icon(Icons.image_rounded), label: Text('Input Gambar')),

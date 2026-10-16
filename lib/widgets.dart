@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'services.dart';
 import 'theme.dart';
 
 Color alpha(Color c, double o) => c.withAlpha((o * 255).round());
@@ -102,6 +104,207 @@ class AppCard extends StatelessWidget {
         border: Border.all(color: kLine),
       ),
       child: child,
+    );
+  }
+}
+
+/// Kontrol halaman tabel: pilihan jumlah per halaman (opsional), info "a-b dari n", dan tombol sebelumnya/berikutnya.
+class PagerBar extends StatelessWidget {
+  final int total, page, perPage; // page dimulai dari 0
+  final ValueChanged<int> onPage;
+  final List<int>? perPageOptions; // null = jumlah per halaman tetap (tanpa pilihan)
+  final ValueChanged<int>? onPerPage;
+  const PagerBar({
+    super.key,
+    required this.total,
+    required this.page,
+    required this.perPage,
+    required this.onPage,
+    this.perPageOptions,
+    this.onPerPage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = total == 0 ? 1 : (total + perPage - 1) ~/ perPage;
+    final from = total == 0 ? 0 : page * perPage + 1;
+    final to = (page + 1) * perPage > total ? total : (page + 1) * perPage;
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 14,
+      runSpacing: 6,
+      children: [
+        if (perPageOptions != null)
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            const Text('Tampilkan ', style: TextStyle(fontSize: 13, color: kBrown)),
+            DropdownButton<int>(
+              value: perPage,
+              underline: const SizedBox(),
+              borderRadius: BorderRadius.circular(12),
+              items: [for (final o in perPageOptions!) DropdownMenuItem<int>(value: o, child: Text('$o'))],
+              onChanged: (v) {
+                if (v != null) onPerPage?.call(v);
+              },
+            ),
+            const Text(' per halaman', style: TextStyle(fontSize: 13, color: kBrown)),
+          ]),
+        Text('$from\u2013$to dari $total', style: TextStyle(fontSize: 13, color: Colors.brown.shade400)),
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          IconButton(
+            tooltip: 'Sebelumnya',
+            onPressed: page > 0 ? () => onPage(page - 1) : null,
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          Text('${page + 1} / $pages', style: const TextStyle(fontWeight: FontWeight.w700, color: kBrown)),
+          IconButton(
+            tooltip: 'Berikutnya',
+            onPressed: page < pages - 1 ? () => onPage(page + 1) : null,
+            icon: const Icon(Icons.chevron_right_rounded),
+          ),
+        ]),
+      ],
+    );
+  }
+}
+
+class FOpt {
+  final String value;
+  final String label;
+  const FOpt(this.value, this.label);
+}
+
+/// true bila tanggal [t] berada dalam rentang [r] (r null = tanpa filter tanggal).
+bool inDateRange(DateTime t, DateTimeRange? r) {
+  if (r == null) return true;
+  final l = t.toLocal();
+  final d = DateTime(l.year, l.month, l.day);
+  final a = DateTime(r.start.year, r.start.month, r.start.day);
+  final b = DateTime(r.end.year, r.end.month, r.end.day);
+  return !d.isBefore(a) && !d.isAfter(b);
+}
+
+/// Pilihan filter (dropdown) berlabel.
+class FilterDrop extends StatelessWidget {
+  final String label;
+  final String value;
+  final List<FOpt> options;
+  final ValueChanged<String> onChanged;
+  const FilterDrop({super.key, required this.label, required this.value, required this.options, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final safe = options.any((o) => o.value == value) ? value : options.first.value;
+    return SizedBox(
+      width: 185,
+      child: DropdownButtonFormField<String>(
+        initialValue: safe,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: label,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        ),
+        items: [for (final o in options) DropdownMenuItem<String>(value: o.value, child: Text(o.label, overflow: TextOverflow.ellipsis))],
+        onChanged: (v) => onChanged(v ?? options.first.value),
+      ),
+    );
+  }
+}
+
+/// Bilah pencarian + filter + rentang tanggal untuk tabel.
+class FilterBar extends StatefulWidget {
+  final String hint;
+  final ValueChanged<String> onSearch;
+  final List<Widget> filters;
+  final DateTimeRange? range;
+  final ValueChanged<DateTimeRange?>? onRange;
+  final VoidCallback? onReset;
+  const FilterBar({
+    super.key,
+    required this.hint,
+    required this.onSearch,
+    this.filters = const [],
+    this.range,
+    this.onRange,
+    this.onReset,
+  });
+
+  @override
+  State<FilterBar> createState() => _FilterBarState();
+}
+
+class _FilterBarState extends State<FilterBar> {
+  final _c = TextEditingController();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  String _d(DateTime d) => '${two(d.day)}/${two(d.month)}/${d.year}';
+
+  @override
+  Widget build(BuildContext context) {
+    final r = widget.range;
+    return AppCard(
+      padding: const EdgeInsets.all(12),
+      child: Wrap(spacing: 10, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        SizedBox(
+          width: 260,
+          child: TextField(
+            controller: _c,
+            onChanged: (v) {
+              widget.onSearch(v);
+              setState(() {});
+            },
+            decoration: InputDecoration(
+              hintText: widget.hint,
+              prefixIcon: const Icon(Icons.search_rounded),
+              isDense: true,
+              suffixIcon: _c.text.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      onPressed: () {
+                        _c.clear();
+                        widget.onSearch('');
+                        setState(() {});
+                      },
+                    ),
+            ),
+          ),
+        ),
+        ...widget.filters,
+        if (widget.onRange != null)
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+            onPressed: () async {
+              final picked = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(2024),
+                lastDate: DateTime.now().add(const Duration(days: 1)),
+                initialDateRange: r,
+              );
+              if (picked != null) widget.onRange!(picked);
+            },
+            icon: const Icon(Icons.date_range_rounded, size: 18),
+            label: Text(r == null ? 'Rentang tanggal' : '${_d(r.start)} - ${_d(r.end)}'),
+          ),
+        if (r != null && widget.onRange != null)
+          IconButton(tooltip: 'Hapus filter tanggal', icon: const Icon(Icons.close_rounded), onPressed: () => widget.onRange!(null)),
+        if (widget.onReset != null)
+          TextButton.icon(
+            onPressed: () {
+              _c.clear();
+              setState(() {});
+              widget.onReset!();
+            },
+            icon: const Icon(Icons.restart_alt_rounded, size: 18),
+            label: const Text('Reset'),
+          ),
+      ]),
     );
   }
 }
@@ -259,6 +462,169 @@ class _PassFieldState extends State<PassField> {
           onPressed: () => setState(() => _hide = !_hide),
         ),
       ),
+    );
+  }
+}
+
+String? emailValidator(String? v) {
+  final s = (v ?? '').trim().toLowerCase();
+  if (!RegExp(r'^[a-z0-9._%+\-]+@([a-z0-9\-]+\.)+[a-z]{2,10}$').hasMatch(s)) return 'Format email tidak valid';
+  // Cegah salah ketik domain populer, misalnya gmail.comm atau gmial.com
+  final domain = s.split('@').last;
+  const known = <String, List<String>>{
+    'gmail': ['gmail.com'],
+    'yahoo': ['yahoo.com', 'yahoo.co.id', 'yahoo.co.uk'],
+    'hotmail': ['hotmail.com'],
+    'outlook': ['outlook.com', 'outlook.co.id'],
+    'icloud': ['icloud.com'],
+  };
+  final ok = known[domain.split('.').first];
+  if (ok != null && !ok.contains(domain)) return 'Maksud kamu ${ok.first}?';
+  if (domain == 'gmial.com' || domain == 'gmai.com' || domain == 'gmal.com' || domain == 'gamil.com') return 'Maksud kamu gmail.com?';
+  return null;
+}
+
+/// Kolom kode OTP (angka saja, rata tengah).
+class OtpField extends StatelessWidget {
+  final TextEditingController controller;
+  const OtpField({super.key, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      textAlign: TextAlign.center,
+      maxLength: 10,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.w800),
+      decoration: const InputDecoration(labelText: 'Kode OTP dari email', counterText: ''),
+      validator: (v) => (v ?? '').trim().length < 6 ? 'Masukkan kode OTP dari email' : null,
+    );
+  }
+}
+
+/// Dua kolom password baru + konfirmasi, dengan tombol mata (tampilkan/sembunyikan).
+class PasswordPair extends StatefulWidget {
+  final TextEditingController p1, p2;
+  final String label;
+  const PasswordPair({super.key, required this.p1, required this.p2, this.label = 'Password baru'});
+
+  @override
+  State<PasswordPair> createState() => _PasswordPairState();
+}
+
+class _PasswordPairState extends State<PasswordPair> {
+  bool _hide = true;
+
+  InputDecoration _dec(String label) => InputDecoration(
+        labelText: label,
+        prefixIcon: const Icon(Icons.lock_outline),
+        suffixIcon: IconButton(
+          tooltip: _hide ? 'Tampilkan password' : 'Sembunyikan password',
+          icon: Icon(_hide ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+          onPressed: () => setState(() => _hide = !_hide),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      TextFormField(
+        controller: widget.p1,
+        obscureText: _hide,
+        textInputAction: TextInputAction.next,
+        decoration: _dec(widget.label),
+        validator: (v) => (v ?? '').length < 6 ? 'Minimal 6 karakter' : null,
+      ),
+      const SizedBox(height: 14),
+      TextFormField(
+        controller: widget.p2,
+        obscureText: _hide,
+        decoration: _dec('Konfirmasi ${widget.label.toLowerCase()}'),
+        validator: (v) => v != widget.p1.text ? 'Konfirmasi tidak sama' : null,
+      ),
+    ]);
+  }
+}
+
+/// Lencana tipe user (Reguler / VIP / Premium) atau Admin.
+class PlanBadge extends StatelessWidget {
+  final String plan;
+  final bool admin;
+  const PlanBadge({super.key, required this.plan, this.admin = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = planInfo(plan);
+    final color = admin ? kGreen : p.warna;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: alpha(color, .15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: alpha(color, .6)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(admin ? Icons.shield_rounded : p.ikon, size: 15, color: color),
+        const SizedBox(width: 5),
+        Text(admin ? 'Admin' : p.nama, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: color)),
+      ]),
+    );
+  }
+}
+
+/// Kotak ringkas: tipe user + sisa scan hari ini.
+class QuotaBar extends StatelessWidget {
+  const QuotaBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<Quota?>(
+      valueListenable: Api.quota,
+      builder: (context, q, _) {
+        final me = AppState.me;
+        final isAdmin = me?.isAdmin ?? false;
+        final unlimited = isAdmin || (q?.unlimited ?? false);
+        final plan = q?.plan ?? me?.plan ?? 'reguler';
+        final remaining = q?.remaining ?? 0;
+        final limit = q?.limit ?? 0;
+        final exhausted = q != null && !unlimited && remaining <= 0;
+        final color = exhausted ? Colors.red.shade700 : kDeepAmber;
+        return AppCard(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              PlanBadge(plan: plan, admin: isAdmin),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  unlimited ? 'Scan tanpa batas' : (q == null ? 'Memuat sisa scan...' : 'Sisa scan hari ini: $remaining dari $limit'),
+                  style: TextStyle(fontWeight: FontWeight.w800, color: exhausted ? Colors.red.shade700 : kBrown),
+                ),
+              ),
+            ]),
+            if (!unlimited && q != null) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: limit == 0 ? 0 : remaining / limit,
+                  minHeight: 8,
+                  color: color,
+                  backgroundColor: alpha(color, .15),
+                ),
+              ),
+            ],
+            if (exhausted) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Batas scan hari ini sudah habis. Scan aktif lagi besok. Hubungi admin untuk upgrade paket.',
+                style: TextStyle(color: Colors.red.shade700, fontSize: 12.5, height: 1.35),
+              ),
+            ],
+          ]),
+        );
+      },
     );
   }
 }

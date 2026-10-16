@@ -7,7 +7,9 @@ import 'login.dart';
 import 'register.dart';
 
 class LandingPage extends StatefulWidget {
-  const LandingPage({super.key});
+  /// Pesan singkat saat halaman dibuka (awalan "OK:" atau "ERR:"), mis. setelah klik link verifikasi.
+  final String? notice;
+  const LandingPage({super.key, this.notice});
   @override
   State<LandingPage> createState() => _LandingPageState();
 }
@@ -23,6 +25,17 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
     ('Terlalu\nMatang', Color(0xFF8D6E63)),
     ('Busuk', Color(0xFF4E342E)),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final n = widget.notice;
+    if (n != null && n.length > 3) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) toast(context, n.substring(n.indexOf(':') + 1), error: n.startsWith('ERR'));
+      });
+    }
+  }
 
   @override
   void dispose() {

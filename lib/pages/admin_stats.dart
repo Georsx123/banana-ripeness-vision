@@ -3,6 +3,7 @@ import '../charts.dart';
 import '../services.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'admin_scans_table.dart';
 
 class AdminStatsPage extends StatefulWidget {
   const AdminStatsPage({super.key});
@@ -100,6 +101,8 @@ class _AdminStatsPageState extends State<AdminStatsPage> {
             ),
           ]),
         ],
+        const SectionTitle('Riwayat scan seluruh pengguna', Icons.history_rounded),
+        const AdminScansTable(),
       ],
     );
   }

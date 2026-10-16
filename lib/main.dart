@@ -24,11 +24,14 @@ class PisangApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Route<dynamic> rootRoute() => MaterialPageRoute(builder: (_) => Root(initError: initError));
     return MaterialApp(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
-      home: Root(initError: initError),
+      // Link dari email (verifikasi) bisa membawa tambahan di alamat; semuanya diarahkan ke halaman utama.
+      onGenerateInitialRoutes: (String name) => [rootRoute()],
+      onUnknownRoute: (settings) => rootRoute(),
     );
   }
 }
@@ -42,6 +45,21 @@ class Root extends StatefulWidget {
 
 class _RootState extends State<Root> {
   late final Future<bool> _f = _check();
+  final String? _notice = _linkNotice();
+
+  /// Mengenali pengguna yang baru membuka link dari email (verifikasi) dan menyiapkan pesan.
+  static String? _linkNotice() {
+    final u = Uri.base;
+    final frag = u.fragment;
+    final q = u.queryParameters;
+    if (q.containsKey('error_description') || frag.contains('error_description') || frag.contains('otp_expired')) {
+      return 'ERR:Link verifikasi tidak valid atau sudah kedaluwarsa. Minta email verifikasi baru lewat halaman Masuk.';
+    }
+    if (q.containsKey('code') || frag.contains('type=signup') || frag.contains('access_token')) {
+      return 'OK:Email berhasil diverifikasi. Silakan masuk.';
+    }
+    return null;
+  }
 
   /// Menunggu pengecekan sesi DAN minimal SplashTiming.startup (lihat splash.dart).
   Future<bool> _check() async {
@@ -95,7 +113,7 @@ class _RootState extends State<Root> {
         } else if (snap.data == true) {
           child = const Shell(key: ValueKey('shell'));
         } else {
-          child = const LandingPage(key: ValueKey('landing'));
+          child = LandingPage(key: const ValueKey('landing'), notice: _notice);
         }
         return AnimatedSwitcher(duration: const Duration(milliseconds: 800), child: child);
       },

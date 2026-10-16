@@ -112,7 +112,7 @@ class AboutPage extends StatelessWidget {
         AppCard(
           child: Column(children: [
             _row(Icons.psychology_rounded, 'Model AI', 'Roboflow, dilatih dengan 6 kelas: mentah, segar belum matang, segar matang, matang, terlalu matang, busuk.'),
-            _row(Icons.storage_rounded, 'Database', 'Supabase (PostgreSQL) dengan 3 tabel: profiles, riwayat_scan, info_pisang.'),
+            _row(Icons.storage_rounded, 'Database', 'Supabase (PostgreSQL): data pengguna, riwayat scan, kuota scan, pesan, dan aktivitas admin.'),
             _row(Icons.flutter_dash_rounded, 'Platform', 'Flutter Web (PWA). Bisa dipasang ke layar utama HP lewat browser.'),
             _row(Icons.warning_amber_rounded, 'Catatan', 'Hasil deteksi adalah perkiraan AI dan dapat dipengaruhi cahaya serta sudut foto.'),
           ]),
