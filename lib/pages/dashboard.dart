@@ -32,9 +32,55 @@ class _DashboardPageState extends State<DashboardPage> {
     if (mounted) setState(() => _loading = false);
   }
 
-  IconData _icon(String k) => k == 'fakta' ? Icons.lightbulb_rounded : (k == 'tips' ? Icons.tips_and_updates_rounded : Icons.info_rounded);
-  Color _color(String k) => k == 'fakta' ? const Color(0xFF8E24AA) : (k == 'tips' ? kGreen : const Color(0xFF1E88E5));
-  String _label(String k) => k == 'fakta' ? 'Fakta Unik' : (k == 'tips' ? 'Tips' : 'Info Penting');
+  /// Satu kelas kematangan: ketuk untuk membuka detail, ketuk lagi untuk menutup.
+  Widget _kelasTile(KelasInfo k) {
+    final d = kelasDetail[k.key];
+    return Collapsible(
+      accent: k.warna,
+      leading: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: alpha(k.warna, .2), shape: BoxShape.circle, border: Border.all(color: k.warna, width: 2.5)),
+        child: const Text('\u{1F34C}', style: TextStyle(fontSize: 21)),
+      ),
+      title: k.nama,
+      subtitle: k.deskripsi,
+      children: [
+        if (d != null) InfoBullet(judul: 'Ciri-ciri', isi: d.ciri, color: k.warna),
+        InfoBullet(judul: 'Penjelasan', isi: k.deskripsi, color: k.warna),
+        if (d != null) InfoBullet(judul: 'Cocok untuk', isi: d.cocok, color: k.warna),
+        if (k.saran.isNotEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: alpha(kAmber, .15), borderRadius: BorderRadius.circular(12)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(Icons.tips_and_updates_rounded, size: 20, color: kDeepAmber),
+              const SizedBox(width: 8),
+              Expanded(child: Text(k.saran, style: const TextStyle(height: 1.4, fontSize: 13.5))),
+            ]),
+          ),
+      ],
+    );
+  }
+
+  /// Satu kelompok wawasan (fakta, tips, sejarah, dan seterusnya) yang bisa dilipat.
+  Widget _groupTile(InfoGroup g) {
+    return Collapsible(
+      accent: g.warna,
+      initiallyExpanded: g.terbuka,
+      leading: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(color: alpha(g.warna, .15), borderRadius: BorderRadius.circular(14)),
+        child: Icon(g.ikon, color: g.warna),
+      ),
+      title: g.judul,
+      subtitle: g.ringkas,
+      children: [for (final i in g.items) InfoBullet(judul: i.judul, isi: i.isi, color: g.warna)],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +96,6 @@ class _DashboardPageState extends State<DashboardPage> {
       final e = counts.entries.reduce((a, b) => a.value >= b.value ? a : b);
       topKelas = infoKelas(e.key).nama;
     }
-    final infos = infoPisangList;
     final wide = MediaQuery.of(context).size.width > 560;
 
     return PageWrap(
@@ -66,7 +111,7 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Halo, ${me?.nama ?? ''}! 👋',
+                Text('Halo, ${me?.nama ?? ''}! \u{1F44B}',
                     style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 6),
                 const Text('Sudah cek kematangan pisangmu hari ini? Arahkan kamera atau unggah foto, AI akan menjawabnya.',
@@ -80,7 +125,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ]),
             ),
-            if (wide) const Padding(padding: EdgeInsets.only(left: 12), child: Text('🍌', style: TextStyle(fontSize: 96))),
+            if (wide) const Padding(padding: EdgeInsets.only(left: 12), child: Text('\u{1F34C}', style: TextStyle(fontSize: 96))),
           ]),
         ),
         const SizedBox(height: 16),
@@ -108,28 +153,12 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ]),
         const SectionTitle('Enam tingkat kematangan', Icons.category_rounded),
-        ResponsiveWrap(minWidth: 300, children: [
-          for (final k in kelasList)
-            AppCard(
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(color: alpha(k.warna, .2), shape: BoxShape.circle, border: Border.all(color: k.warna, width: 2.5)),
-                  child: const Text('🍌', style: TextStyle(fontSize: 22)),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(k.nama, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: kBrown)),
-                    const SizedBox(height: 4),
-                    Text(k.deskripsi, style: TextStyle(color: Colors.brown.shade400, fontSize: 13, height: 1.35)),
-                  ]),
-                ),
-              ]),
-            ),
-        ]),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text('Ketuk salah satu kelas untuk membuka detailnya, ketuk lagi untuk menutup.',
+              style: TextStyle(color: Colors.brown.shade400, fontSize: 13)),
+        ),
+        ResponsiveWrap(minWidth: 340, children: [for (final k in kelasList) _kelasTile(k)]),
         const SectionTitle('Grafik & statistik', Icons.bar_chart_rounded),
         ResponsiveWrap(minWidth: 420, children: [
           AppCard(
@@ -164,27 +193,13 @@ class _DashboardPageState extends State<DashboardPage> {
             ]),
           ),
         ]),
-        const SectionTitle('Fakta unik & info penting', Icons.auto_awesome_rounded),
-        ResponsiveWrap(minWidth: 320, children: [
-          for (final i in infos)
-            AppCard(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: alpha(_color('${i['kategori']}'), .14), borderRadius: BorderRadius.circular(12)),
-                    child: Icon(_icon('${i['kategori']}'), color: _color('${i['kategori']}'), size: 22),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(_label('${i['kategori']}'),
-                      style: TextStyle(fontWeight: FontWeight.w700, color: _color('${i['kategori']}'), fontSize: 13)),
-                ]),
-                const SizedBox(height: 12),
-                Text('${i['judul']}', style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800, color: kBrown)),
-                const SizedBox(height: 6),
-                Text('${i['isi']}', style: TextStyle(color: Colors.brown.shade400, height: 1.45)),
-              ]),
-            ),
+        const SectionTitle('Wawasan seputar pisang', Icons.auto_awesome_rounded),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text('Ketuk judul untuk membuka atau menutup isinya.', style: TextStyle(color: Colors.brown.shade400, fontSize: 13)),
+        ),
+        Column(children: [
+          for (final g in infoGroups) Padding(padding: const EdgeInsets.only(bottom: 12), child: _groupTile(g)),
         ]),
       ],
     );

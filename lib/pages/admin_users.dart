@@ -5,6 +5,7 @@ import '../theme.dart';
 import '../widgets.dart';
 import '../xlsx.dart';
 import 'admin_flow.dart';
+import 'package:flutter/foundation.dart';
 
 class AdminUsersPage extends StatefulWidget {
   const AdminUsersPage({super.key});
@@ -159,10 +160,10 @@ class _AdminUsersPageState extends State<AdminUsersPage> {
             ],
         ],
       );
-      saveBytesFile(name, bytes, xlsxMime);
-      if (mounted) toast(context, 'File $name diunduh');
+      await saveBytesFile(name, bytes, xlsxMime);
+      if (mounted && kIsWeb) toast(context, 'File $name diunduh');
     } catch (e) {
-      if (mounted) toast(context, 'Ekspor belum didukung di perangkat ini.', error: true);
+      if (mounted) toast(context, 'Gagal mengekspor: ${Api.friendly(e)}', error: true);
     }
   }
 

@@ -4,6 +4,7 @@ import '../services.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import '../xlsx.dart';
+import 'package:flutter/foundation.dart';
 
 /// Tabel riwayat scan SELURUH pengguna (tabel riwayat_scan di database), khusus admin.
 /// Data sama dengan riwayat tiap pengguna: kalau pengguna menghapus riwayatnya, baris ini ikut hilang.
@@ -67,7 +68,7 @@ class _AdminScansTableState extends State<AdminScansTable> {
         _page = 0;
       });
 
-  void _export() {
+  Future<void> _export() async {
     final view = _view;
     if (view.isEmpty) {
       toast(context, 'Tidak ada data untuk diekspor.', error: true);
@@ -95,10 +96,10 @@ class _AdminScansTableState extends State<AdminScansTable> {
             ],
         ],
       );
-      saveBytesFile(name, bytes, xlsxMime);
-      toast(context, 'File $name diunduh');
+      await saveBytesFile(name, bytes, xlsxMime);
+      if (mounted && kIsWeb) toast(context, 'File $name diunduh');
     } catch (e) {
-      toast(context, 'Ekspor belum didukung di perangkat ini.', error: true);
+      if (mounted) toast(context, 'Gagal mengekspor: ${Api.friendly(e)}', error: true);
     }
   }
 

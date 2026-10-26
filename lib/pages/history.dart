@@ -5,6 +5,7 @@ import '../services.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import '../xlsx.dart';
+import 'package:flutter/foundation.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -63,7 +64,7 @@ class _HistoryPageState extends State<HistoryPage> {
       });
 
   /// Mengunduh riwayat yang sedang tampil (sesuai filter) sebagai berkas Excel (.xlsx).
-  void _exportExcel() {
+  Future<void> _exportExcel() async {
     final view = _view;
     if (view.isEmpty) {
       toast(context, 'Tidak ada data untuk diekspor.', error: true);
@@ -91,10 +92,10 @@ class _HistoryPageState extends State<HistoryPage> {
         centerCols: const [0, 2, 4],
         rows: rows,
       );
-      saveBytesFile(name, bytes, xlsxMime);
-      toast(context, 'File $name diunduh');
+      await saveBytesFile(name, bytes, xlsxMime);
+      if (mounted && kIsWeb) toast(context, 'File $name diunduh');
     } catch (e) {
-      toast(context, 'Ekspor belum didukung di perangkat ini.', error: true);
+      if (mounted) toast(context, 'Gagal mengekspor: ${Api.friendly(e)}', error: true);
     }
   }
 

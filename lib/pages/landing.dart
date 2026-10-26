@@ -7,7 +7,7 @@ import 'login.dart';
 import 'register.dart';
 
 class LandingPage extends StatefulWidget {
-  /// Pesan singkat saat halaman dibuka (awalan "OK:" atau "ERR:"), mis. setelah klik link verifikasi.
+  /// Pesan singkat saat halaman dibuka (awalan "OK:" atau "ERR:").
   final String? notice;
   const LandingPage({super.key, this.notice});
   @override
@@ -54,11 +54,7 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
             final t = (_c.value + phase) % 1.0;
             return Transform.translate(
               offset: Offset(math.sin(t * 2 * math.pi) * 18, math.cos(t * 2 * math.pi) * 18),
-              child: Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withAlpha(28)),
-              ),
+              child: Container(width: size, height: size, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withAlpha(28))),
             );
           },
         ),
@@ -79,7 +75,7 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
               offset: Offset(0, math.sin(t * 2 * math.pi) * 14),
               child: Transform.rotate(
                 angle: math.sin(t * 2 * math.pi) * 0.25,
-                child: Opacity(opacity: 0.55, child: Text('🍌', style: TextStyle(fontSize: size))),
+                child: Opacity(opacity: 0.55, child: Text('\u{1F34C}', style: TextStyle(fontSize: size))),
               ),
             );
           },
@@ -101,10 +97,7 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
             Container(
               width: 130 + 70 * p,
               height: 130 + 70 * p,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withAlpha((130 * (1 - p)).round()), width: 3),
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withAlpha((130 * (1 - p)).round()), width: 3)),
             ),
             Container(
               width: 130,
@@ -115,7 +108,7 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
                 shape: BoxShape.circle,
                 boxShadow: [BoxShadow(color: Colors.black.withAlpha(55), blurRadius: 30, offset: const Offset(0, 14))],
               ),
-              child: Transform.rotate(angle: bob, child: const Text('🍌', style: TextStyle(fontSize: 70))),
+              child: Transform.rotate(angle: bob, child: const Text('\u{1F34C}', style: TextStyle(fontSize: 70))),
             ),
           ]),
         );
@@ -173,6 +166,58 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
     );
   }
 
+  Widget _glass({required Widget child}) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(40),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.white.withAlpha(80)),
+        ),
+        child: child,
+      );
+
+  Widget _heading(String t) => Padding(
+        padding: const EdgeInsets.only(top: 34, bottom: 14),
+        child: Text(t, textAlign: TextAlign.center, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900, color: Colors.white)),
+      );
+
+  Widget _step(int n, String title, String text) => _glass(
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: Colors.white,
+            child: Text('$n', style: const TextStyle(color: kDeepAmber, fontWeight: FontWeight.w900)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+              const SizedBox(height: 3),
+              Text(text, style: const TextStyle(color: Colors.white, height: 1.4, fontSize: 13)),
+            ]),
+          ),
+        ]),
+      );
+
+  Widget _feature(IconData icon, String title, String text) => _glass(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: Colors.white, size: 28),
+          const SizedBox(height: 10),
+          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+          const SizedBox(height: 3),
+          Text(text, style: const TextStyle(color: Colors.white, height: 1.4, fontSize: 13)),
+        ]),
+      );
+
+  Widget _fakta(String t) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('\u{1F34C} ', style: TextStyle(fontSize: 16)),
+          Expanded(child: Text(t, style: const TextStyle(color: Colors.white, height: 1.4, fontSize: 13.5))),
+        ]),
+      );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,11 +225,7 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFFFD54F), Color(0xFFFFA000), Color(0xFFE65100)],
-          ),
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFD54F), Color(0xFFFFA000), Color(0xFFE65100)]),
         ),
         child: LayoutBuilder(builder: (context, c) {
           return Stack(fit: StackFit.expand, children: [
@@ -198,9 +239,9 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
+                    constraints: const BoxConstraints(maxWidth: 720),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Reveal(child: _logo()),
                       const SizedBox(height: 4),
@@ -223,44 +264,74 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
                           _chip(Icons.category_rounded, '6 tingkat kematangan'),
                           _chip(Icons.photo_camera_rounded, 'Gambar & realtime'),
                           _chip(Icons.insights_rounded, 'Riwayat & grafik'),
+                          _chip(Icons.psychology_rounded, 'AI RF-DETR'),
                         ]),
                       ),
                       const SizedBox(height: 22),
-                      Reveal(delayMs: 560, child: _stageStrip()),
+                      Reveal(delayMs: 560, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 440), child: _stageStrip())),
                       const SizedBox(height: 28),
                       Reveal(
                         delayMs: 1000,
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: kBrown, minimumSize: const Size(0, 54)),
-                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())),
-                            icon: const Icon(Icons.login_rounded),
-                            label: const Text('Masuk'),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: kBrown, minimumSize: const Size(0, 54)),
+                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())),
+                              icon: const Icon(Icons.login_rounded),
+                              label: const Text('Masuk'),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
                       Reveal(
                         delayMs: 1100,
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(0, 54),
-                              side: const BorderSide(color: Colors.white, width: 2),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(0, 54),
+                                side: const BorderSide(color: Colors.white, width: 2),
+                              ),
+                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage())),
+                              icon: const Icon(Icons.person_add_alt_1_rounded),
+                              label: const Text('Daftar Akun Baru'),
                             ),
-                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage())),
-                            icon: const Icon(Icons.person_add_alt_1_rounded),
-                            label: const Text('Daftar Akun Baru'),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 22),
                       Reveal(
                         delayMs: 1200,
-                        child: Text('Versi ${AppConfig.appVersion}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                        child: Column(children: [
+                          _heading('Cara kerjanya'),
+                          ResponsiveWrap(minWidth: 210, children: [
+                            _step(1, 'Foto atau arahkan kamera', 'Unggah foto pisang atau pakai kamera realtime.'),
+                            _step(2, 'AI mengenali', 'Model RF-DETR (Transformer) mendeteksi tiap pisang dan tingkat kematangannya.'),
+                            _step(3, 'Dapatkan hasil', 'Lihat kelas, akurasi, dan saran penanganan, lalu simpan ke riwayat.'),
+                          ]),
+                          _heading('Yang kamu dapatkan'),
+                          ResponsiveWrap(minWidth: 210, children: [
+                            _feature(Icons.category_rounded, '6 tingkat kematangan', 'Dari mentah sampai busuk, lengkap dengan penjelasan dan saran.'),
+                            _feature(Icons.center_focus_strong_rounded, 'Gambar dan realtime', 'Unggah foto atau deteksi langsung lewat kamera.'),
+                            _feature(Icons.insights_rounded, 'Riwayat dan grafik', 'Pantau hasil scan dan ekspor ke Excel.'),
+                            _feature(Icons.verified_user_rounded, 'Akun aman', 'Email diverifikasi dengan kode OTP.'),
+                          ]),
+                          _heading('Tahukah kamu?'),
+                          _glass(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              _fakta('Secara botani, pisang termasuk buah berry, sedangkan stroberi bukan.'),
+                              _fakta('Bintik cokelat menandakan pisang sangat matang dan paling manis.'),
+                              _fakta('Pisang matang melepas gas etilen yang membuat buah di dekatnya cepat matang.'),
+                            ]),
+                          ),
+                          const SizedBox(height: 26),
+                          Text('Versi ${AppConfig.appVersion}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                        ]),
                       ),
                     ]),
                   ),

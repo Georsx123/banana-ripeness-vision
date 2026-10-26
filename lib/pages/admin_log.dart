@@ -4,6 +4,7 @@ import '../services.dart';
 import '../widgets.dart';
 import '../xlsx.dart';
 import 'admin_flow.dart';
+import 'package:flutter/foundation.dart';
 
 /// Riwayat aktivitas admin di Admin Panel (dengan catatan waktu), bisa dicari, difilter, diekspor,
 /// dan dibersihkan (pembersihan butuh izin dari admin lain).
@@ -61,7 +62,7 @@ class _AdminLogPageState extends State<AdminLogPage> {
         _page = 0;
       });
 
-  void _export() {
+  Future<void> _export() async {
     final view = _view;
     if (view.isEmpty) {
       toast(context, 'Tidak ada catatan untuk diekspor.', error: true);
@@ -86,10 +87,10 @@ class _AdminLogPageState extends State<AdminLogPage> {
             ],
         ],
       );
-      saveBytesFile(name, bytes, xlsxMime);
-      toast(context, 'File $name diunduh');
+      await saveBytesFile(name, bytes, xlsxMime);
+      if (mounted && kIsWeb) toast(context, 'File $name diunduh');
     } catch (e) {
-      toast(context, 'Ekspor belum didukung di perangkat ini.', error: true);
+      if (mounted) toast(context, 'Gagal mengekspor: ${Api.friendly(e)}', error: true);
     }
   }
 

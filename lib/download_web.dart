@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:web/web.dart' as web;
 
 /// Memicu unduhan berkas di browser.
-void saveBytesFile(String filename, Uint8List bytes, String mime) {
+Future<void> saveBytesFile(String filename, Uint8List bytes, String mime) async {
   final a = web.document.createElement('a') as web.HTMLAnchorElement;
   a.href = 'data:$mime;base64,${base64Encode(bytes)}';
   a.download = filename;

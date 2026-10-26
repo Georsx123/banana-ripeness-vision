@@ -444,6 +444,11 @@ class _ScanPageState extends State<ScanPage> {
       final cd = cams.firstWhere((c) => c.lensDirection == CameraLensDirection.back, orElse: () => cams.first);
       final c = CameraController(cd, ResolutionPreset.medium, enableAudio: false);
       await c.initialize();
+      try {
+        await c.setFlashMode(FlashMode.off); // cegah lampu kilat menyala tiap pengambilan gambar
+      } catch (_) {
+        // sebagian perangkat/browser tidak mendukung pengaturan flash
+      }
       if (!mounted) {
         await c.dispose();
         return;

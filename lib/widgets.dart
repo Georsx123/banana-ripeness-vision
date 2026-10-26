@@ -168,6 +168,83 @@ class PagerBar extends StatelessWidget {
   }
 }
 
+/// Kartu yang bisa dibuka dan ditutup dengan animasi geser (hemat ruang di layar HP).
+class Collapsible extends StatelessWidget {
+  final Widget? leading;
+  final String title;
+  final String? subtitle;
+  final bool initiallyExpanded;
+  final Color? accent;
+  final List<Widget> children;
+  const Collapsible({
+    super.key,
+    this.leading,
+    required this.title,
+    this.subtitle,
+    this.initiallyExpanded = false,
+    this.accent,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = accent ?? kDeepAmber;
+    return Container(
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: kLine)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            initiallyExpanded: initiallyExpanded,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            expandedAlignment: Alignment.centerLeft,
+            expandedCrossAxisAlignment: CrossAxisAlignment.start,
+            shape: const Border(),
+            collapsedShape: const Border(),
+            iconColor: color,
+            collapsedIconColor: kBrown,
+            textColor: kBrown,
+            collapsedTextColor: kBrown,
+            leading: leading,
+            title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            subtitle: subtitle == null
+                ? null
+                : Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.brown.shade400, fontSize: 12.5)),
+            children: children,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Butir informasi: titik berwarna + judul tebal + isi.
+class InfoBullet extends StatelessWidget {
+  final String judul;
+  final String isi;
+  final Color color;
+  const InfoBullet({super.key, required this.judul, required this.isi, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(width: 8, height: 8, margin: const EdgeInsets.only(top: 7, right: 10), decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(judul, style: const TextStyle(fontWeight: FontWeight.w800, color: kBrown, height: 1.3)),
+            const SizedBox(height: 2),
+            Text(isi, style: TextStyle(color: Colors.brown.shade600, height: 1.45, fontSize: 13.5)),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
 class FOpt {
   final String value;
   final String label;
