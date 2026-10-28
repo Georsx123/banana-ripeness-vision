@@ -115,7 +115,7 @@ class _AdminScansTableState extends State<AdminScansTable> {
         OutlinedButton.icon(onPressed: _export, icon: const Icon(Icons.download_rounded), label: const Text('Ekspor Excel')),
         OutlinedButton.icon(onPressed: _loading ? null : _load, icon: const Icon(Icons.refresh_rounded), label: const Text('Muat ulang')),
         Text(
-          _loading ? 'Memuat...' : '${view.length} dari ${_rows.length} catatan (maksimal 5000 terbaru)',
+          _loading ? 'Memuat...' : '${view.length} dari ${_rows.length} catatan',
           style: TextStyle(color: Colors.brown.shade400, fontSize: 12.5),
         ),
       ]),
