@@ -172,7 +172,7 @@ class _HistoryPageState extends State<HistoryPage> {
           const AppCard(
             padding: EdgeInsets.symmetric(vertical: 50, horizontal: 20),
             child: Column(children: [
-              Text('\u{1F34C}', style: TextStyle(fontSize: 56)),
+              BananaImage(size: 56),
               SizedBox(height: 10),
               Text('Belum ada riwayat', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: kBrown)),
               SizedBox(height: 4),

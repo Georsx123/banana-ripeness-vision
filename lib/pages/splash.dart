@@ -75,7 +75,7 @@ class _BrandSplashState extends State<BrandSplash> with TickerProviderStateMixin
               offset: Offset(0, math.sin(t * 2 * math.pi) * 12),
               child: Transform.rotate(
                 angle: math.sin(t * 2 * math.pi) * 0.25,
-                child: Opacity(opacity: 0.5, child: Text('🍌', style: TextStyle(fontSize: size))),
+                child: Opacity(opacity: 0.5, child: BananaImage(size: size)),
               ),
             );
           },
@@ -116,7 +116,7 @@ class _BrandSplashState extends State<BrandSplash> with TickerProviderStateMixin
                   shape: BoxShape.circle,
                   boxShadow: [BoxShadow(color: Colors.black.withAlpha(55), blurRadius: 30, offset: const Offset(0, 14))],
                 ),
-                child: Transform.rotate(angle: bob, child: const Text('🍌', style: TextStyle(fontSize: 64))),
+                child: Transform.rotate(angle: bob, child: const BananaImage(size: 64)),
               ),
             ]),
           );

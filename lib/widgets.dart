@@ -168,6 +168,28 @@ class PagerBar extends StatelessWidget {
   }
 }
 
+/// Gambar pisang. Memakai berkas gambar supaya tampil SAMA di web dan Android
+/// (emoji berbeda-beda bentuknya tergantung HP). Jika berkas belum terdaftar, jatuh kembali ke emoji.
+class BananaImage extends StatelessWidget {
+  final double size;
+  const BananaImage({super.key, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final box = size * 1.15;
+    return SizedBox(
+      width: box,
+      height: box,
+      child: Image.asset(
+        'assets/images/pisang.png',
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (_, __, ___) => Center(child: Text('\u{1F34C}', style: TextStyle(fontSize: size))),
+      ),
+    );
+  }
+}
+
 /// Kartu yang bisa dibuka dan ditutup dengan animasi geser (hemat ruang di layar HP).
 class Collapsible extends StatelessWidget {
   final Widget? leading;
@@ -769,7 +791,7 @@ class AuthScaffold extends StatelessWidget {
                       height: 76,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: kLine, width: 2)),
-                      child: const Text('🍌', style: TextStyle(fontSize: 38)),
+                      child: BananaImage(size: 38),
                     ),
                   ),
                   const SizedBox(height: 16),

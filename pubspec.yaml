@@ -1,7 +1,7 @@
 name: banana_ripeness_vision
 description: Aplikasi deteksi tingkat kematangan pisang dengan AI.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.5+5
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -20,3 +20,17 @@ dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+       - assets/images/
+
+  fonts:
+       - family: Roboto
+         fonts:
+           - asset: assets/fonts/Roboto-Regular.ttf
+           - asset: assets/fonts/Roboto-Medium.ttf
+             weight: 400
+           - asset: assets/fonts/Roboto-Bold.ttf
+             weight: 600
+           - asset: assets/fonts/Roboto-Black.ttf
+             weight: 800

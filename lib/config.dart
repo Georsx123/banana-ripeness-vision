@@ -11,7 +11,7 @@ class AppConfig {
 
   // --- Info aplikasi ---
   static const appName = 'Banana Ripeness Vision';
-  static const appVersion = '1.0.0';
+  static const appVersion = '1.0.5';
   static const emailDomain = 'pisang.app'; // domain email internal (tidak perlu diubah)
   static const contactEmail = 'geovanipradipta123@gmail.com';
   static const contactWa = '085947105271';

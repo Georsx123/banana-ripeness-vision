@@ -75,7 +75,7 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
               offset: Offset(0, math.sin(t * 2 * math.pi) * 14),
               child: Transform.rotate(
                 angle: math.sin(t * 2 * math.pi) * 0.25,
-                child: Opacity(opacity: 0.55, child: Text('\u{1F34C}', style: TextStyle(fontSize: size))),
+                child: Opacity(opacity: 0.55, child: BananaImage(size: size)),
               ),
             );
           },
@@ -108,7 +108,7 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
                 shape: BoxShape.circle,
                 boxShadow: [BoxShadow(color: Colors.black.withAlpha(55), blurRadius: 30, offset: const Offset(0, 14))],
               ),
-              child: Transform.rotate(angle: bob, child: const Text('\u{1F34C}', style: TextStyle(fontSize: 70))),
+              child: Transform.rotate(angle: bob, child: const BananaImage(size: 70)),
             ),
           ]),
         );
@@ -166,58 +166,6 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
     );
   }
 
-  Widget _glass({required Widget child}) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white.withAlpha(40),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white.withAlpha(80)),
-        ),
-        child: child,
-      );
-
-  Widget _heading(String t) => Padding(
-        padding: const EdgeInsets.only(top: 34, bottom: 14),
-        child: Text(t, textAlign: TextAlign.center, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900, color: Colors.white)),
-      );
-
-  Widget _step(int n, String title, String text) => _glass(
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: Colors.white,
-            child: Text('$n', style: const TextStyle(color: kDeepAmber, fontWeight: FontWeight.w900)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
-              const SizedBox(height: 3),
-              Text(text, style: const TextStyle(color: Colors.white, height: 1.4, fontSize: 13)),
-            ]),
-          ),
-        ]),
-      );
-
-  Widget _feature(IconData icon, String title, String text) => _glass(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icon, color: Colors.white, size: 28),
-          const SizedBox(height: 10),
-          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
-          const SizedBox(height: 3),
-          Text(text, style: const TextStyle(color: Colors.white, height: 1.4, fontSize: 13)),
-        ]),
-      );
-
-  Widget _fakta(String t) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('\u{1F34C} ', style: TextStyle(fontSize: 16)),
-          Expanded(child: Text(t, style: const TextStyle(color: Colors.white, height: 1.4, fontSize: 13.5))),
-        ]),
-      );
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -239,9 +187,9 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+                  padding: const EdgeInsets.all(24),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 720),
+                    constraints: const BoxConstraints(maxWidth: 440),
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Reveal(child: _logo()),
                       const SizedBox(height: 4),
@@ -251,9 +199,20 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
                             textAlign: TextAlign.center,
                             style: const TextStyle(fontSize: 34, height: 1.1, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5)),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
+                      Reveal(
+                        delayMs: 280,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(color: Colors.white.withAlpha(70), borderRadius: BorderRadius.circular(30)),
+                          child: const Text('AI DETEKSI KEMATANGAN PISANG',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5, letterSpacing: 1.2)),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       const Reveal(
-                        delayMs: 320,
+                        delayMs: 340,
                         child: Text('Kenali tingkat kematangan pisang\ndalam sekali jepret dengan AI.',
                             textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.white, height: 1.4)),
                       ),
@@ -264,75 +223,42 @@ class _LandingPageState extends State<LandingPage> with SingleTickerProviderStat
                           _chip(Icons.category_rounded, '6 tingkat kematangan'),
                           _chip(Icons.photo_camera_rounded, 'Gambar & realtime'),
                           _chip(Icons.insights_rounded, 'Riwayat & grafik'),
-                          _chip(Icons.psychology_rounded, 'AI RF-DETR'),
                         ]),
                       ),
                       const SizedBox(height: 22),
-                      Reveal(delayMs: 560, child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 440), child: _stageStrip())),
+                      Reveal(delayMs: 560, child: _stageStrip()),
                       const SizedBox(height: 28),
                       Reveal(
                         delayMs: 1000,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 440),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: kBrown, minimumSize: const Size(0, 54)),
-                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())),
-                              icon: const Icon(Icons.login_rounded),
-                              label: const Text('Masuk'),
-                            ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: kBrown, minimumSize: const Size(0, 54)),
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())),
+                            icon: const Icon(Icons.login_rounded),
+                            label: const Text('Masuk'),
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
                       Reveal(
                         delayMs: 1100,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 440),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                minimumSize: const Size(0, 54),
-                                side: const BorderSide(color: Colors.white, width: 2),
-                              ),
-                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage())),
-                              icon: const Icon(Icons.person_add_alt_1_rounded),
-                              label: const Text('Daftar Akun Baru'),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(0, 54),
+                              side: const BorderSide(color: Colors.white, width: 2),
                             ),
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage())),
+                            icon: const Icon(Icons.person_add_alt_1_rounded),
+                            label: const Text('Daftar Akun Baru'),
                           ),
                         ),
                       ),
-                      Reveal(
-                        delayMs: 1200,
-                        child: Column(children: [
-                          _heading('Cara kerjanya'),
-                          ResponsiveWrap(minWidth: 210, children: [
-                            _step(1, 'Foto atau arahkan kamera', 'Unggah foto pisang atau pakai kamera realtime.'),
-                            _step(2, 'AI mengenali', 'Model RF-DETR (Transformer) mendeteksi tiap pisang dan tingkat kematangannya.'),
-                            _step(3, 'Dapatkan hasil', 'Lihat kelas, akurasi, dan saran penanganan, lalu simpan ke riwayat.'),
-                          ]),
-                          _heading('Yang kamu dapatkan'),
-                          ResponsiveWrap(minWidth: 210, children: [
-                            _feature(Icons.category_rounded, '6 tingkat kematangan', 'Dari mentah sampai busuk, lengkap dengan penjelasan dan saran.'),
-                            _feature(Icons.center_focus_strong_rounded, 'Gambar dan realtime', 'Unggah foto atau deteksi langsung lewat kamera.'),
-                            _feature(Icons.insights_rounded, 'Riwayat dan grafik', 'Pantau hasil scan dan ekspor ke Excel.'),
-                            _feature(Icons.verified_user_rounded, 'Akun aman', 'Email diverifikasi dengan kode OTP.'),
-                          ]),
-                          _heading('Tahukah kamu?'),
-                          _glass(
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              _fakta('Secara botani, pisang termasuk buah berry, sedangkan stroberi bukan.'),
-                              _fakta('Bintik cokelat menandakan pisang sangat matang dan paling manis.'),
-                              _fakta('Pisang matang melepas gas etilen yang membuat buah di dekatnya cepat matang.'),
-                            ]),
-                          ),
-                          const SizedBox(height: 26),
-                          Text('Versi ${AppConfig.appVersion}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                        ]),
-                      ),
+                      const SizedBox(height: 26),
+                      Text('Versi ${AppConfig.appVersion}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                     ]),
                   ),
                 ),

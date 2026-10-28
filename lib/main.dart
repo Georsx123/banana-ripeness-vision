@@ -32,6 +32,14 @@ class PisangApp extends StatelessWidget {
       // Link dari email (verifikasi) bisa membawa tambahan di alamat; semuanya diarahkan ke halaman utama.
       onGenerateInitialRoutes: (String name) => [rootRoute()],
       onUnknownRoute: (settings) => rootRoute(),
+      // Batasi pembesaran teks dari pengaturan HP agar tampilan tidak pecah (tetap menghormati pengaturan font pengguna).
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        return MediaQuery(
+          data: mq.copyWith(textScaler: mq.textScaler.clamp(minScaleFactor: 0.9, maxScaleFactor: 1.15)),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

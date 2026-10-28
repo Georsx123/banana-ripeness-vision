@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'package:flutter/foundation.dart';
 
 class BoxPainter extends CustomPainter {
   final ScanResult r;
@@ -68,7 +69,7 @@ class ResultPanel extends StatelessWidget {
             height: 54,
             alignment: Alignment.center,
             decoration: BoxDecoration(color: alpha(k.warna, .2), shape: BoxShape.circle, border: Border.all(color: k.warna, width: 3)),
-            child: const Text('🍌', style: TextStyle(fontSize: 26)),
+            child: BananaImage(size: 26),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -522,6 +523,27 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
+  /// Pratinjau kamera + kotak hasil. Di web ukurannya mengikuti rasio video; di Android widget
+  /// CameraPreview mengatur sendiri rasio dan rotasinya (dibungkus AspectRatio malah membuat gambar melebar).
+  Widget _cameraView(CameraController c) {
+    final overlay = Stack(fit: StackFit.expand, children: [
+      if (_live != null && _live!.hasBoxes) CustomPaint(painter: BoxPainter(_live!)),
+      Positioned(
+        top: 10,
+        left: 10,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(color: _paused ? Colors.orange.shade700 : Colors.red.shade600, borderRadius: BorderRadius.circular(20)),
+          child: Text(_paused ? 'HASIL DIJEDA' : 'LIVE', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+        ),
+      ),
+    ]);
+    if (kIsWeb) {
+      return AspectRatio(aspectRatio: c.value.aspectRatio, child: Stack(fit: StackFit.expand, children: [CameraPreview(c), overlay]));
+    }
+    return CameraPreview(c, child: overlay);
+  }
+
   Widget _liveMode() {
     final c = _cam;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -544,22 +566,7 @@ class _ScanPageState extends State<ScanPage> {
             constraints: const BoxConstraints(maxWidth: 640),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: AspectRatio(
-                aspectRatio: c.value.aspectRatio,
-                child: Stack(fit: StackFit.expand, children: [
-                  CameraPreview(c),
-                  if (_live != null && _live!.hasBoxes) CustomPaint(painter: BoxPainter(_live!)),
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: _paused ? Colors.orange.shade700 : Colors.red.shade600, borderRadius: BorderRadius.circular(20)),
-                      child: Text(_paused ? 'HASIL DIJEDA' : 'LIVE', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                    ),
-                  ),
-                ]),
-              ),
+              child: _cameraView(c),
             ),
           ),
         ),

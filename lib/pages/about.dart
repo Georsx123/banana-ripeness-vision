@@ -94,7 +94,7 @@ class AboutPage extends StatelessWidget {
               height: 80,
               alignment: Alignment.center,
               decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: const Text('\u{1F34C}', style: TextStyle(fontSize: 44)),
+              child: BananaImage(size: 44),
             ),
             const SizedBox(width: 18),
             Expanded(
